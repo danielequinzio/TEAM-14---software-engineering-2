@@ -129,3 +129,6 @@ chromedriver.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local SQLite databases
+*.db
