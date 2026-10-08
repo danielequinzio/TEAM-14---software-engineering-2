@@ -79,7 +79,13 @@ def get_services(session: SessionDep):
     services = session.exec(select(Service)).all()
     return services
 
-
+@app.post("/services", response_model=Service, status_code=201)
+def create_service(service: Service, session: SessionDep):
+    db_service = Service.model_validate(service)
+    session.add(db_service)
+    session.commit()
+    session.refresh(db_service)  # loads the generated id
+    return db_service
 
 """
 @app.post("/cars", response_model=Car, status_code=201)
