@@ -1,5 +1,5 @@
 """
-Unit tests for GET /ticket.
+Unit tests for POST /ticket.
 
 The real DB session is replaced with a MagicMock, so these tests never
 touch OQM.db. Run from the backend folder with:
@@ -7,7 +7,6 @@ touch OQM.db. Run from the backend folder with:
     pytest "backend_test" -v
 """
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -17,7 +16,7 @@ from fastapi.testclient import TestClient
 # make backend/API importable (the test folder name has a space, so no package import)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "API"))
 
-from API import Ticket, app, get_session  # noqa: E402
+from API import Service, app, get_session  # noqa: E402
 
 
 # ---------- Fixtures ----------
@@ -39,48 +38,45 @@ def client(mock_session):
 
 # ---------- Tests ----------
 
-def test_get_ticket_found(client, mock_session):
-    # Arrange: the session "finds" a ticket
-    fake_ticket = Ticket(
-        id=1,
-        service_id=2,
-        status="waiting",
-        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
-    )
-    mock_session.get.return_value = fake_ticket
+def test_post_ticket_created(client, mock_session):
+    fake_service = Service(id=2, name="Shipping", service_time=5)
+    mock_session.get.return_value = fake_service
 
     # API request
-    response = client.get("/ticket", params={"ticket_id": 1})
+    response = client.post("/ticket", params={"service_id": 2})
 
     # Assert
-    assert response.status_code == 201  # NOTE: the route declares 201; 200 is usual for GET
+    assert response.status_code == 201
     body = response.json()
-    assert body["id"] == 1
     assert body["service_id"] == 2
     assert body["status"] == "waiting"
-    mock_session.get.assert_called_once_with(Ticket, 1)
+    assert body["created_at"] is not None  # set by the route when the ticket is created
+    mock_session.get.assert_called_once_with(Service, 2)
+    mock_session.add.assert_called_once()
+    mock_session.commit.assert_called_once()
 
 
-def test_get_ticket_not_found(client, mock_session):
+def test_post_ticket_service_not_found(client, mock_session):
     mock_session.get.return_value = None
 
-    response = client.get("/ticket", params={"ticket_id": 999})
+    response = client.post("/ticket", params={"service_id": 999})
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Ticket not found"}
-    mock_session.get.assert_called_once_with(Ticket, 999)
+    assert response.json() == {"detail": "Service not found"}
+    mock_session.get.assert_called_once_with(Service, 999)
+    mock_session.add.assert_not_called()
 
 
-def test_get_ticket_missing_param(client, mock_session):
-    response = client.get("/ticket")
+def test_post_ticket_missing_param(client, mock_session):
+    response = client.post("/ticket")
 
     assert response.status_code == 422  # FastAPI validation error
     mock_session.get.assert_not_called()
 
 
 @pytest.mark.parametrize("bad_id", ["abc", "1.5"])
-def test_get_ticket_invalid_param(client, mock_session, bad_id):
-    response = client.get("/ticket", params={"ticket_id": bad_id})
+def test_post_ticket_invalid_param(client, mock_session, bad_id):
+    response = client.post("/ticket", params={"service_id": bad_id})
 
     assert response.status_code == 422
     mock_session.get.assert_not_called()
