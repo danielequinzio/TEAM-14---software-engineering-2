@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 # make backend/API importable (the test folder name has a space, so no package import)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "API"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "API"))
 
 from API import Ticket, app, get_session  # noqa: E402
 

@@ -119,13 +119,15 @@ def create_service(service: Service, session: SessionDep):
     return db_service
 
 @app.post("/counters", response_model=Counter, status_code=201)
-def create_counter(service_ids: list[int], session: SessionDep):
+def create_counter(name: str, service_ids: list[int], session: SessionDep):
     ids = check_services_exist(session, service_ids)
-    counter = Counter()
+    counter = Counter(name = name)
     session.add(counter)
     session.flush()  # loads the generated id
     set_counter_services(session, counter.id, ids)
     session.commit()
+    session.refresh(counter)
+    return counter
     
 @app.get("/counters", response_model=list[Counter], status_code=200)
 def get_counters(session: SessionDep):
