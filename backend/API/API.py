@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
@@ -63,6 +63,16 @@ app = FastAPI(lifespan=lifespan)
 
 # ---------- Helpers ----------
 
+@contextmanager
+def transaction(session: Session):
+    # all the writes in the block are committed together, or none of them on any error
+    try:
+        yield
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
 def get_counter_404(session: Session, counter_id: int) -> Counter:
     counter = session.get(Counter, counter_id)
     if counter is None:
@@ -120,12 +130,12 @@ def create_service(service: Service, session: SessionDep):
 
 @app.post("/counters", response_model=Counter, status_code=201)
 def create_counter(name: str, service_ids: list[int], session: SessionDep):
-    ids = check_services_exist(session, service_ids)
-    counter = Counter(name = name)
-    session.add(counter)
-    session.flush()  # loads the generated id
-    set_counter_services(session, counter.id, ids)
-    session.commit()
+    with transaction(session):  # counter + its service links
+        ids = check_services_exist(session, service_ids)
+        counter = Counter(name = name)
+        session.add(counter)
+        session.flush()  # loads the generated id
+        set_counter_services(session, counter.id, ids)
     session.refresh(counter)
     return counter
     
@@ -140,10 +150,10 @@ def get_counter(counter_id: int, session: SessionDep):
 
 @app.put("/counters/{counter_id}", response_model=Counter, status_code=200)
 def update_counter(counter_id: int, service_ids: list[int], session: SessionDep):
-    counter = get_counter_404(session, counter_id)
-    ids = check_services_exist(session, service_ids)
-    set_counter_services(session, counter.id, ids)
-    session.commit()
+    with transaction(session):  # delete old links + insert new ones
+        counter = get_counter_404(session, counter_id)
+        ids = check_services_exist(session, service_ids)
+        set_counter_services(session, counter.id, ids)
     return counter
 
 """
