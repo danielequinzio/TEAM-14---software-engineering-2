@@ -80,7 +80,11 @@ def test_get_counter(client):
     response = client.get("/counters/1")
 
     assert response.status_code == 200
-    assert response.json() == {"id": 1, "name": "Counter 1"}
+    assert response.json() == {
+        "id": 1,
+        "name": "Counter 1",
+        "services": [{"id": 1, "name": "Shipping", "service_time": 5}],
+    }
 
 
 def test_get_counter_not_found(client, mock_session):

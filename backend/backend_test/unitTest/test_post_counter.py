@@ -95,3 +95,19 @@ def test_create_counter_missing_name_returns_422(client, mock_session):
 
     assert response.status_code == 422
     assert mock_session.exec(select(Counter)).all() == []
+
+
+def test_create_counter_duplicate_name_returns_409_and_creates_nothing(client, mock_session):
+    client.post("/counters", params={"name": "Counter 1"}, json=[1])
+
+    response = client.post("/counters", params={"name": "Counter 1"}, json=[2])
+
+    assert response.status_code == 409
+    assert len(mock_session.exec(select(Counter)).all()) == 1
+
+
+def test_create_counter_empty_name_returns_422(client, mock_session):
+    response = client.post("/counters", params={"name": ""}, json=[1])
+
+    assert response.status_code == 422
+    assert mock_session.exec(select(Counter)).all() == []
