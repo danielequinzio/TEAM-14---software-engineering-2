@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
@@ -67,6 +67,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # ---------- Helpers ----------
+
+@contextmanager
+def transaction(session: Session):
+    # all the writes in the block are committed together, or none of them on any error
+    try:
+        yield
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
 def get_counter_404(session: Session, counter_id: int) -> Counter:
     counter = session.get(Counter, counter_id)
