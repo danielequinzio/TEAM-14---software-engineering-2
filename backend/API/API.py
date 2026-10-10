@@ -67,8 +67,8 @@ def new_ticket(service_id: int, session: SessionDep):
     session.refresh(ticket)  # loads the generated id
     return ticket
 
-@app.get("/ticket", response_model=Ticket, status_code=201)
-def new_ticket(ticket_id: int, session: SessionDep):
+@app.get("/ticket", response_model=Ticket, status_code=200)
+def get_ticket(ticket_id: int, session: SessionDep):
     ticket = session.get(Ticket, ticket_id)
     if not ticket:
         raise HTTPException(404, "Ticket not found")
@@ -86,55 +86,3 @@ def create_service(service: Service, session: SessionDep):
     session.commit()
     session.refresh(db_service)  # loads the generated id
     return db_service
-
-"""
-@app.post("/cars", response_model=Car, status_code=201)
-def create_car(car: CarCreate, session: SessionDep):
-    db_car = Car.model_validate(car)
-    session.add(db_car)
-    session.commit()
-    session.refresh(db_car)  # loads the generated id
-    return db_car
-
-
-@app.get("/cars", response_model=list[Car])
-def list_cars(
-    session: SessionDep,
-    brand: str | None = None,
-    offset: int = 0,
-    limit: Annotated[int, Query(le=100)] = 100,
-):
-    query = select(Car)
-    if brand:
-        query = query.where(Car.brand == brand)
-    return session.exec(query.offset(offset).limit(limit)).all()
-
-
-@app.get("/cars/{car_id}", response_model=Car)
-def get_car(car_id: int, session: SessionDep):
-    car = session.get(Car, car_id)
-    if not car:
-        raise HTTPException(404, "Car not found")
-    return car
-
-
-@app.patch("/cars/{car_id}", response_model=Car)
-def update_car(car_id: int, car: CarUpdate, session: SessionDep):
-    db_car = session.get(Car, car_id)
-    if not db_car:
-        raise HTTPException(404, "Car not found")
-    db_car.sqlmodel_update(car.model_dump(exclude_unset=True))
-    session.add(db_car)
-    session.commit()
-    session.refresh(db_car)
-    return db_car
-
-
-@app.delete("/cars/{car_id}", status_code=204)
-def delete_car(car_id: int, session: SessionDep):
-    car = session.get(Car, car_id)
-    if not car:
-        raise HTTPException(404, "Car not found")
-    session.delete(car)
-    session.commit()
-    """

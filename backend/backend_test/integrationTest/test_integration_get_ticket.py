@@ -79,7 +79,7 @@ def test_post_ticket_then_get_ticket(client):
 
     # API request: the ticket is saved and can be read back
     response = client.get("/ticket", params={"ticket_id": ticket["id"]})
-    assert response.status_code == 201  # NOTE: the route declares 201; 200 is usual for GET
+    assert response.status_code == 200
     body = response.json()
     assert body["id"] == ticket["id"]
     assert body["service_id"] == service["id"]

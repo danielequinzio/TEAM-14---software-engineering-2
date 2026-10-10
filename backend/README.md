@@ -58,4 +58,27 @@ Install the package, then add it to `requirements.txt` so the rest of the team g
 
 ```bash
 python -m pip install <package>
+python -m pip freeze > requirements.txt
+```
+
+## Tests and coverage
+
+With the virtual environment active, run all the tests in `backend_test/` (unit + integration) with coverage from `backend`:
+
+```bash
+python -m pytest
+```
+
+The settings are in `pyproject.toml`, so no extra options are needed. Coverage is measured on the app code in `API/` only.
+
+Reports:
+
+- the terminal shows a table with the coverage percentage and the uncovered line numbers;
+- an HTML report is written to `htmlcov/`; open `htmlcov/index.html` in a browser.
+
+To run a single file or test:
+
+```bash
+python -m pytest backend_test/unitTest/test_get_ticket.py
+python -m pytest -k not_found
 ```
