@@ -53,7 +53,7 @@ def test_get_ticket_found(client, mock_session):
     response = client.get("/ticket", params={"ticket_id": 1})
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == 200 
     body = response.json()
     assert body["id"] == 1
     assert body["service_id"] == 2

@@ -56,3 +56,18 @@ def test_post_services_missing_body(client, mock_session):
 
     assert response.status_code == 422  # FastAPI validation error
     mock_session.add.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "bad_body",
+    [
+        {"service_time": 5},                          # missing name
+        {"name": "Shipping"},                         # missing service_time
+        {"name": "Shipping", "service_time": "abc"},  # wrong type
+    ],
+)
+def test_post_services_invalid_body(client, mock_session, bad_body):
+    response = client.post("/services", json=bad_body)
+
+    assert response.status_code == 422
+    mock_session.add.assert_not_called()
