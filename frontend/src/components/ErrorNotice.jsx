@@ -8,13 +8,6 @@ export default function ErrorNotice({ error, context, onRetry }) {
       <button type="button" className="button button-secondary" onClick={onRetry}>
         Try again
       </button>
-      {/* >>> TEST MODE (temporary): delete this line together with the src/devtools folder <<< */}
-      {import.meta.env.DEV && (
-        <p className="notice-hint">
-          No backend? Open Test mode (bottom right) to use sample data.
-        </p>
-      )}
-      {/* >>> END TEST MODE <<< */}
     </div>
   );
 }

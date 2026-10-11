@@ -117,8 +117,8 @@ function CounterRow({ counter, services, onSaved }) {
 }
 
 // The manager's screen: see the counters, add one, choose which services each serves.
-export default function ConfigCountersScreen({ reloadSignal = 0 }) {
-  const load = useLoad(loadAll, reloadSignal);
+export default function ConfigCountersScreen() {
+  const load = useLoad(loadAll);
   const { reload } = load;
 
   const [name, setName] = useState('');

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_ROUTE, ROUTES } from '../routes.js';
 
-// The current screen comes from the address ("#/stats"), so a reload or the
+// The current screen comes from the address ("#/config-counters"), so a reload or the
 // browser's back button keeps the screen, and no router library is needed.
 function readRoute() {
   const path = window.location.hash.replace(/^#\/?/, '').split(/[/?]/)[0];

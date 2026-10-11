@@ -1,4 +1,4 @@
-/* Screens other than Get ticket: Next customer, Call customer, Stats, Config counters. */
+/* Config counters screen. */
 
 .screen {
   max-width: 1120px;
@@ -29,22 +29,6 @@
 .screen .notice {
   margin: 0 0 20px;
   max-width: 40rem;
-}
-
-.screen-actions {
-  margin-top: 24px;
-}
-
-a.button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.button-large {
-  min-height: 56px;
-  padding: 0 32px;
-  font-size: 1.25rem;
 }
 
 /* ---------- Cards and forms ---------- */
@@ -79,7 +63,6 @@ a.button {
 }
 
 .field input[type='text'],
-.field input[type='date'],
 .field select {
   width: 100%;
   min-height: 44px;
@@ -89,14 +72,6 @@ a.button {
   background: #fff;
   color: var(--ink);
   font: inherit;
-}
-
-.field-inline {
-  margin-bottom: 0;
-}
-
-.field-inline input {
-  width: auto;
 }
 
 .banner {
@@ -111,192 +86,6 @@ a.button {
 
 .banner[hidden] {
   display: none;
-}
-
-.result {
-  margin-top: 20px;
-}
-
-.result:empty {
-  display: none;
-}
-
-.result-empty {
-  color: var(--muted);
-}
-
-.called {
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--amber-soft);
-  box-shadow: inset 0 0 0 2px var(--amber);
-  text-align: center;
-}
-
-.called-label {
-  font-weight: 600;
-}
-
-.called-number {
-  font: 700 5rem/1 var(--font-display);
-}
-
-.called-service {
-  font-size: 1.25rem;
-}
-
-/* ---------- Call customer ---------- */
-
-.display-grid {
-  display: grid;
-  gap: 24px;
-}
-
-@media (min-width: 900px) {
-  .display-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 48px;
-  }
-}
-
-.board {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-radius: 8px;
-  background: var(--paper);
-}
-
-.board-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--line);
-}
-
-.board-row:first-child {
-  border-top: 0;
-}
-
-.board-row-mine {
-  background: var(--amber-soft);
-  box-shadow: inset 4px 0 0 var(--amber);
-}
-
-.board-counter {
-  font-weight: 600;
-}
-
-.board-ticket {
-  font: 700 2.25rem/1 var(--font-display);
-}
-
-.board-you {
-  font: 600 1rem var(--font-body);
-}
-
-.board-idle,
-.board-count {
-  color: var(--muted);
-}
-
-/* ---------- Stats ---------- */
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 16px 32px;
-  margin-bottom: 24px;
-}
-
-.segmented {
-  display: inline-flex;
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.segmented-button {
-  min-height: 44px;
-  padding: 0 20px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: 600 1.0625rem/1 var(--font-body);
-  cursor: pointer;
-}
-
-.segmented-button[aria-pressed='true'] {
-  background: var(--ink);
-  color: #fff;
-}
-
-.stats-range {
-  color: var(--muted);
-}
-
-.stats-total {
-  margin-bottom: 20px;
-  font-size: 1.25rem;
-}
-
-.stats-number {
-  font: 700 3.5rem/1 var(--font-display);
-}
-
-.stats-columns {
-  display: grid;
-  gap: 24px;
-}
-
-@media (min-width: 700px) {
-  .card:has(.stats-columns) {
-    max-width: 56rem;
-  }
-
-  .stats-columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 40px;
-  }
-}
-
-.bars {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.bars-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.5rem;
-  gap: 4px 12px;
-  margin-bottom: 14px;
-}
-
-.bars-track {
-  grid-column: 1;
-  grid-row: 2;
-  height: 10px;
-  border-radius: 5px;
-  background: #e3e8ef;
-}
-
-.bars-fill {
-  display: block;
-  height: 100%;
-  border-radius: 5px;
-  background: var(--amber);
-}
-
-.bars-count {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  text-align: right;
-  font-weight: 600;
 }
 
 /* ---------- Config counters ---------- */
@@ -380,7 +169,6 @@ a.button {
   gap: 12px;
 }
 
-.notice-hint {
-  margin-top: 12px;
-  font-size: 0.95rem;
+.result-empty {
+  color: var(--muted);
 }

@@ -1,21 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useHashRoute } from './hooks/useHashRoute.js';
 import { ROUTES } from './routes.js';
-import CallCustomerScreen from './screens/CallCustomerScreen.jsx';
 import ConfigCountersScreen from './screens/ConfigCountersScreen.jsx';
 import GetTicketScreen from './screens/GetTicketScreen.jsx';
-import NextCustomerScreen from './screens/NextCustomerScreen.jsx';
-import StatsScreen from './screens/StatsScreen.jsx';
-// >>> TEST MODE (temporary): delete these two lines, the <TestBar> block below and the src/devtools folder <<<
-import { clearScreenMemory } from './storage.js';
-import TestBar from './devtools/TestBar.jsx';
-// >>> END TEST MODE <<<
 
 const SCREENS = {
   'get-ticket': GetTicketScreen,
-  'next-customer': NextCustomerScreen,
-  'call-customer': CallCustomerScreen,
-  stats: StatsScreen,
   'config-counters': ConfigCountersScreen,
 };
 
@@ -34,8 +24,6 @@ function BrandMark() {
 export default function App() {
   const route = useHashRoute();
   const [modalOpen, setModalOpen] = useState(false);
-  const [reloadSignal, setReloadSignal] = useState(0);
-  const [resetKey, setResetKey] = useState(0);
   const firstRender = useRef(true);
 
   const current = ROUTES.find((item) => item.path === route);
@@ -78,24 +66,9 @@ export default function App() {
         </header>
 
         <main>
-          <Screen
-            key={`${route}:${resetKey}`}
-            reloadSignal={reloadSignal}
-            onModalChange={setModalOpen}
-          />
+          <Screen key={route} onModalChange={setModalOpen} />
         </main>
       </div>
-
-      {/* >>> TEST MODE (temporary): delete this block, the two imports above and the src/devtools folder <<< */}
-      <TestBar
-        onReload={() => setReloadSignal((value) => value + 1)}
-        onReset={() => {
-          clearScreenMemory();
-          setModalOpen(false);
-          setResetKey((value) => value + 1);
-        }}
-      />
-      {/* >>> END TEST MODE <<< */}
     </>
   );
 }

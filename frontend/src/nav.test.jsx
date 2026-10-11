@@ -8,22 +8,22 @@ function backend() {
   return mockFetch({
     'GET /api/services': jsonResponse(SERVICES),
     'GET /api/counters': jsonResponse([]),
-    'GET /api/display': jsonResponse({ counters: [], queues: [] }),
   });
 }
 
 describe('screen menu', () => {
-  it('lists the five screens and marks the open one', async () => {
+  it('lists the two screens and marks the open one', async () => {
     backend();
     render(<App />);
 
     const nav = screen.getByRole('navigation', { name: 'Screens' });
     const links = within(nav);
-    ['Get ticket', 'Next customer', 'Call customer', 'Stats', 'Config counters'].forEach((label) => {
-      expect(links.getByRole('link', { name: label })).toBeInTheDocument();
-    });
+    expect(links.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Get ticket',
+      'Config counters',
+    ]);
     expect(links.getByRole('link', { name: 'Get ticket' })).toHaveAttribute('aria-current', 'page');
-    expect(links.getByRole('link', { name: 'Stats' })).not.toHaveAttribute('aria-current');
+    expect(links.getByRole('link', { name: 'Config counters' })).not.toHaveAttribute('aria-current');
     expect(await screen.findByRole('heading', { name: 'Shipping' })).toBeInTheDocument();
   });
 
@@ -42,15 +42,15 @@ describe('screen menu', () => {
   });
 
   it('starts on the screen named in the address', async () => {
-    window.location.hash = '#/call-customer';
+    window.location.hash = '#/config-counters';
     backend();
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Now calling' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Configure counters' })).toBeInTheDocument();
   });
 
   it('falls back to Get ticket for an unknown address', async () => {
-    window.location.hash = '#/nowhere';
+    window.location.hash = '#/unknown';
     backend();
     render(<App />);
 
@@ -66,16 +66,15 @@ describe('screen menu', () => {
         { id: 12, service_id: 1, status: 'waiting', created_at: '2026-10-10T09:15:30' }, 201),
       'GET /api/ticket?ticket_id=12': jsonResponse(
         { id: 12, service_id: 1, status: 'waiting', created_at: '2026-10-10T09:15:30' }),
-      'GET /api/display': jsonResponse({ counters: [], queues: [] }),
-    });
+      });
     render(<App />);
 
     await user.click(await screen.findByRole('button', { name: 'Get ticket for Shipping' }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Get ticket' }));
     expect(await screen.findByRole('heading', { name: 'Your ticket' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('link', { name: 'Call customer' }));
-    await screen.findByRole('heading', { name: 'Now calling' });
+    await user.click(screen.getByRole('link', { name: 'Config counters' }));
+    await screen.findByRole('heading', { name: 'Configure counters' });
     await user.click(screen.getByRole('link', { name: 'Get ticket' }));
 
     expect(await screen.findByRole('heading', { name: 'Your ticket' })).toBeInTheDocument();

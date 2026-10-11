@@ -9,11 +9,6 @@
 //   POST /counters?name=<name>      body: [service ids]  -> { id, name }  (201)
 //   PUT  /counters/<id>             body: [service ids]  -> the counter
 //
-// Proposed, not in the backend yet (see API-NEEDS.md):
-//   POST /counters/<id>/next        -> { ticket: {...} | null }
-//   GET  /display                   -> { counters: [...], queues: [...] }
-//   GET  /stats?period=&date=       -> { period, from, to, total, by_service, by_counter }
-//
 // In development, "/api" is forwarded to the backend by the Vite proxy
 // (see vite.config.js). Set VITE_API_URL to call a backend directly instead.
 
@@ -132,20 +127,4 @@ export function updateCounterServices(counterId, serviceIds, { signal } = {}) {
     body: JSON.stringify(serviceIds),
     signal,
   });
-}
-
-// ---------- queue (proposed endpoints) ----------
-
-export function callNextCustomer(counterId, { signal } = {}) {
-  return request(`/counters/${encodeURIComponent(counterId)}/next`, { method: 'POST', signal });
-}
-
-export function getDisplay({ signal } = {}) {
-  return request('/display', { signal });
-}
-
-// period: 'day' | 'week' | 'month'; date: 'YYYY-MM-DD' (any day inside the period)
-export function getStats(period, date, { signal } = {}) {
-  const query = `period=${encodeURIComponent(period)}&date=${encodeURIComponent(date)}`;
-  return request(`/stats?${query}`, { signal });
 }

@@ -11,8 +11,7 @@ import { readStored, TICKET_ID_KEY, writeStored } from '../storage.js';
 // The customer screen: pick a service, confirm, get the ticket.
 // onModalChange(true|false) tells the page when the confirm dialog is open, so
 // the rest of the page can be made inert while it is.
-// reloadSignal: when it grows, the service list is loaded again (used by test mode).
-export default function GetTicketScreen({ onModalChange, reloadSignal = 0 }) {
+export default function GetTicketScreen({ onModalChange }) {
   const { status, services, error, reload } = useServices();
 
   const [ticket, setTicket] = useState(null);
@@ -22,10 +21,6 @@ export default function GetTicketScreen({ onModalChange, reloadSignal = 0 }) {
   const [createError, setCreateError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [notice, setNotice] = useState('');
-
-  useEffect(() => {
-    if (reloadSignal > 0) reload();
-  }, [reloadSignal, reload]);
 
   useEffect(() => {
     onModalChange?.(selected !== null);

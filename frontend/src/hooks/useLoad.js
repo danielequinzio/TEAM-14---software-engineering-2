@@ -5,8 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // The previous data is kept while loading again or after an error, so a screen
 // can keep showing it (for example while the next period is loading).
 // The loader must be stable (wrap it in useCallback).
-// reloadSignal: when it grows, the data is loaded again (used by test mode).
-export function useLoad(loader, reloadSignal = 0) {
+export function useLoad(loader) {
   const [state, setState] = useState({
     status: loader ? 'loading' : 'idle',
     data: null,
@@ -39,13 +38,6 @@ export function useLoad(loader, reloadSignal = 0) {
     load();
     return () => controllerRef.current?.abort();
   }, [load]);
-
-  const seenSignal = useRef(reloadSignal);
-  useEffect(() => {
-    if (reloadSignal === seenSignal.current) return;
-    seenSignal.current = reloadSignal;
-    load();
-  }, [reloadSignal, load]);
 
   return { ...state, reload: load };
 }

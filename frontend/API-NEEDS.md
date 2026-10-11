@@ -7,8 +7,6 @@ team prefers another shape, only `api.js` (and the screens' reading of the
 result) has to change.
 
 Until they exist, those screens show "The queue system doesn't offer this yet".
-In development, **Test mode** (bottom right) answers them with sample data
-(`src/devtools/mockQueue.js`), so the screens can be tried and demonstrated.
 
 ## Already in the backend (used as is)
 
