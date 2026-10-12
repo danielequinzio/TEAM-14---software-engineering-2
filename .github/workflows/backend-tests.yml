@@ -83,7 +83,7 @@ jobs:
 
       - name: Run E2E tests
         working-directory: backend/backend_test
-        run: newman run OQM_E2E.postman_collection.json --env-var baseUrl=http://localhost:8000
+        run: newman run e2e/* --env-var baseUrl=http://localhost:8000
 
       - name: Server log
         if: failure()
