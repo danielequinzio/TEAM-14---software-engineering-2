@@ -46,6 +46,7 @@ def test_get_ticket_found(client, mock_session):
         service_id=2,
         status="waiting",
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        code="S001"
     )
     mock_session.get.return_value = fake_ticket
 
@@ -58,6 +59,7 @@ def test_get_ticket_found(client, mock_session):
     assert body["id"] == 1
     assert body["service_id"] == 2
     assert body["status"] == "waiting"
+    assert body["code"] == "S001"
     mock_session.get.assert_called_once_with(Ticket, 1)
 
 

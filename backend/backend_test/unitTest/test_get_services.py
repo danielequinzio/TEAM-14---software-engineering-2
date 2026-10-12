@@ -40,8 +40,8 @@ def client(mock_session):
 
 def test_get_services_found(client, mock_session):
     fake_services = [
-        Service(id=1, name="Shipping", service_time=5),
-        Service(id=2, name="Accounts", service_time=10),
+        Service(id=1, name="Shipping", service_time=5, num_tickets=0),
+        Service(id=2, name="Accounts", service_time=10, num_tickets=0),
     ]
     mock_session.exec.return_value.all.return_value = fake_services
 
@@ -51,8 +51,8 @@ def test_get_services_found(client, mock_session):
     # Assert
     assert response.status_code == 200
     assert response.json() == [
-        {"id": 1, "name": "Shipping", "service_time": 5},
-        {"id": 2, "name": "Accounts", "service_time": 10},
+        {"id": 1, "name": "Shipping", "service_time": 5, "num_tickets": 0},
+        {"id": 2, "name": "Accounts", "service_time": 10, "num_tickets": 0},
     ]
     mock_session.exec.assert_called_once()
 

@@ -83,7 +83,7 @@ def test_get_counter(client):
     assert response.json() == {
         "id": 1,
         "name": "Counter 1",
-        "services": [{"id": 1, "name": "Shipping", "service_time": 5}],
+        "services": [{"id": 1, "name": "Shipping", "service_time": 5, "num_tickets": 0}],
     }
 
 

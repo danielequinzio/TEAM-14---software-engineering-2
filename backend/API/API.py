@@ -74,11 +74,6 @@ app = FastAPI(lifespan=lifespan)
 
 # ---------- Helpers ----------
 
-SERVICE_PREFIX = {
-    "Shipping": "S",
-    "Accounts": "A",
-}
-
 @contextmanager
 def transaction(session: Session):
     # all the writes in the block are committed together, or none of them on any error
@@ -118,9 +113,10 @@ def new_ticket(service_id: int, session: SessionDep):
     if not service:
         raise HTTPException(404, "Service not found")
 
-    prefix = SERVICE_PREFIX.get(service.name)
-    if not prefix:
-        raise HTTPException(422, "No prefix configuration")
+    name = service.name.strip()
+    if not name:
+        raise HTTPException(422, "Service name is empty")
+    prefix = name[0].upper()  # first letter of the service name, e.g. Shipping -> S
 
     service.num_tickets += 1
     code = f"{prefix}{service.num_tickets:03d}"  # e.g. S001, A002
@@ -150,22 +146,16 @@ def create_service(service: ServiceCreate, session: SessionDep):
     session.refresh(db_service)  # loads the generated id
     return db_service
 
-@app.put("/services/{service_id}", response_model=Service, status_code=200)
-def update_service(service_id: int, service: ServiceUpdate, session: SessionDep):
-    db_service = session.get(Service, service_id)
-    if not db_service:
-        raise HTTPException(404, "Service not found")
-
-    if service.name is not None:
-        db_service.name = service.name
-    if service.service_time is not None:
-        db_service.service_time = service.service_time
-    if service.num_tickets is not None:
-        db_service.num_tickets = service.num_tickets
-        
+@app.post("/services/reset", response_model=list[Service], status_code=200)
+def reset_services(session: SessionDep):
+    # restart the ticket numbering of every service: the next ticket is 001 again
+    services = session.exec(select(Service)).all()
+    for service in services:
+        service.num_tickets = 0
     session.commit()
-    session.refresh(db_service)
-    return db_service
+    for service in services:
+        session.refresh(service)
+    return services
 
 @app.post("/counters", response_model=Counter, status_code=201)
 def create_counter(name: Annotated[str, Query(min_length=1)], service_ids: list[int], session: SessionDep):
