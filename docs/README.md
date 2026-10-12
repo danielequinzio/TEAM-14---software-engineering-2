@@ -489,10 +489,8 @@ python -m pytest "backend test" -v
 - The `POST /ticket` and `GET /ticket` handlers are both named `get_ticket`. Routing still works, but the second definition replaces the first name in the module. Rename the GET handler, e.g. to `get_ticket`.
 - `POST /services` uses the table model as its request body, so a client can send its own `id`. A separate create model without `id` would prevent this.
 - SQLite foreign keys are not enforced (see [Relationship](#relationship)).
-- `API.py` still contains a commented-out block of example `/cars` routes, which can be removed.
 
 **Not implemented yet**
 
 - Calling the next ticket and changing ticket status (`waiting → serving → done`).
 - Queue length and estimated waiting time (based on `service_time`).
-- Frontend.
