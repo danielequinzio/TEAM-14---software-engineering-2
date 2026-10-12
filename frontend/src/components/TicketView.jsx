@@ -27,7 +27,7 @@ export default function TicketView({
           Your ticket
         </h2>
         <p className="ticket-number-label">Ticket number</p>
-        <p className="ticket-number">{ticket.id}</p>
+        <p className="ticket-number">{ticket.code}</p>
         <p className="ticket-service">{serviceName}</p>
         <p className="ticket-status">
           <span className={`status status-${ticket.status}`}>{statusLabel(ticket.status)}</span>
