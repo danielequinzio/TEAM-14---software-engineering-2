@@ -73,20 +73,20 @@ We haven't done a separation between unit and e2e testing during planning, so ou
 
 ## ASSESSMENT
 
-- What caused your errors in estimation (if any)? 
+- What caused your errors in estimation (if any)?  
 We considered also the time for each story during planning, some tasks like testing were longer than expected.
 
-- What lessons did you learn (both positive and negative) in this sprint? 
-A good lesson: it's good dividing task between all memebers so everyone can work and there aren't too many people working to the same parts.
+- What lessons did you learn (both positive and negative) in this sprint?  
+A good lesson: it's good dividing task between all memebers so everyone can work and there aren't too many people working to the same parts.  
 Negative aspect: the tasks that we defined were too general for this sprint, we didn't specify clearly how to do tasks during our meeting, we didn't organise well our scrum planning.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
   -
 - Which ones you were not able to achieve? Why?
   -
-- Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
-Team coordination: we should improve planning on how assigning tasks to every members so everyone can work ~8h per week, we should improve to be more clear in our meetings on how to do tasks and improve our task assignation.
+- Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)  
+Team coordination: we should improve planning on how assigning tasks to every members so everyone can work ~8h per week, we should improve to be more clear in our meetings on how to do tasks and improve our task assignation.  
 Technical tasks: We should define more specific tasks (for instance 'Backend Dev' is too general), we should also do code review.
 
-- One thing you are proud of as a Team!! 
-  As the first sprint, we did a good job as a team because everyone worked and did more or less the tasks assigned during planning.
+- One thing you are proud of as a Team!!  
+As the first sprint, we did a good job as a team because everyone worked and did more or less the tasks assigned during planning.
