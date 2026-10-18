@@ -18,10 +18,10 @@ sections:
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
-- Unit Tests passing
-- Code review completed
+- Unit Tests passing:  39 tests
+- Code review completed: Not done
 - Code present on Git
-- End-to-End tests performed
+- End-to-End tests performed: 20 tests
 
 > Please refine your DoD 
 
@@ -55,32 +55,38 @@ sections:
 ## QUALITY MEASURES 
 
 - Unit Testing:
-  - Total hours estimated
-  - Total hours spent
-  - Nr of automated unit test cases 
-  - Coverage
+  - Total hours estimated: 6 hours
+  - Total hours spent: 9 hours 20 min
+  - Nr of automated unit test cases: 39 tests 
+  - Coverage: 88%
 - E2E testing:
-  - Total hours estimated
-  - Total hours spent
-  - Nr of test cases
+  - Total hours estimated: 6 hours
+  - Total hours spent: 9 hours 20 min
+  - Nr of test cases: 20 tests
+
+We haven't done a separation between unit and e2e testing during planning, so our estimation and time spent comprehend both.
+
 - Code review 
-  - Total hours estimated 
-  - Total hours spent  
+  - Total hours estimated: Not done
+  - Total hours spent: Not done   
 
 
 ## ASSESSMENT
 
-- What caused your errors in estimation (if any)? we considered also the time for each story during planning, some tasks like testing were longer than expected.
+- What caused your errors in estimation (if any)? 
+We considered also the time for each story during planning, some tasks like testing were longer than expected.
 
-- What lessons did you learn (both positive and negative) in this sprint? a good lesson: it's good dividing task between all memebers so everyone can work and there aren't people that working to the same parts.
-Negative aspect: the tasks that we defined, they were too general for this sprint, we didn't specify clearly how to do tasks during our meeting, we didn't organise well our scrum planning
+- What lessons did you learn (both positive and negative) in this sprint? 
+A good lesson: it's good dividing task between all memebers so everyone can work and there aren't too many people working to the same parts.
+Negative aspect: the tasks that we defined were too general for this sprint, we didn't specify clearly how to do tasks during our meeting, we didn't organise well our scrum planning.
 
 - Which improvement goals set in the previous retrospective were you able to achieve? 
   -
 - Which ones you were not able to achieve? Why?
   -
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
-team coordination: we should improve planning on how assigning tasks to every members so everyone can work 8h per week, we should improve to be more clear in our meeting on how to do tasks, how assigning tasks and we should specify better what we are going to do in the tasks (for instance in this sprint: backend dev is too general).
+Team coordination: we should improve planning on how assigning tasks to every members so everyone can work ~8h per week, we should improve to be more clear in our meetings on how to do tasks and improve our task assignation.
+Technical tasks: We should define more specific tasks (for instance 'Backend Dev' is too general), we should also do code review.
 
 - One thing you are proud of as a Team!! 
-  As first sprint, everyone did a good job because everyone worked and everyone did more or less the tasks assigned during planning
+  As the first sprint, we did a good job as a team because everyone worked and did more or less the tasks assigned during planning.
