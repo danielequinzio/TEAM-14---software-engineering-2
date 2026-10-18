@@ -18,10 +18,10 @@ sections:
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
-- Unit Tests passing:  39 tests
-- Code review completed: Not done
+- Unit Tests passing
+- Code review completed
 - Code present on Git
-- End-to-End tests performed: 20 tests
+- End-to-End tests performed
 
 > Please refine your DoD 
 
@@ -64,11 +64,13 @@ sections:
   - Total hours spent: 9 hours 20 min
   - Nr of test cases: 20 tests
 
-We haven't done a separation between unit and e2e testing during planning, so our estimation and time spent comprehend both.
+We didn't do a separation between unit and e2e testing during planning, so our estimation and time spent comprehend both.
 
 - Code review 
-  - Total hours estimated: Not done
-  - Total hours spent: Not done   
+  - Total hours estimated: Not defined
+  - Total hours spent: Not defined  
+
+We reviewed our code before marking tasks as 'done' but we didn't define a specific task so time was not estimated or tracked.
 
 
 ## ASSESSMENT
@@ -85,8 +87,8 @@ Negative aspect: the tasks that we defined were too general for this sprint, we 
 - Which ones you were not able to achieve? Why?
   -
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)  
-Team coordination: we should improve planning on how assigning tasks to every members so everyone can work ~8h per week, we should improve to be more clear in our meetings on how to do tasks and improve our task assignation.  
-Technical tasks: We should define more specific tasks (for instance 'Backend Dev' is too general), we should also do code review.
+Team coordination: we should improve our task assignation so everyone can work ~8h per week, we should improve to be more clear in our meetings on how to do tasks.  
+Technical tasks: We should define more specific tasks (for instance 'Backend Dev' is too general), we should also define code review tasks.
 
 - One thing you are proud of as a Team!!  
 As the first sprint, we did a good job as a team because everyone worked and did more or less the tasks assigned during planning.
