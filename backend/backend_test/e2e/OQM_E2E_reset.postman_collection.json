@@ -1,0 +1,962 @@
+{
+	"info": {
+		"name": "OQM - E2E reset",
+		"description": "End-to-end scenario for resetting the ticket numbering, run against the real running server.\n\nCreates 3 services (Payment, Delivery, Assembling) and 2 counters (c1: Payment + Delivery, c2: Delivery + Assembling), lets some clients take tickets, resets the services and checks that the next tickets start again from 001.\n\nRun the backend first (from `backend`: `fastapi dev API/API.py`), then run the collection in order with the Collection Runner or:\n\n    newman run OQM_E2E_reset.postman_collection.json\n\nNote: the reset restarts the numbering of every service in the db, not only the 3 created here.\n\nChange `baseUrl` in the collection variables if the server is not on localhost:8000.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "runId",
+			"value": ""
+		},
+		{
+			"key": "paymentId",
+			"value": ""
+		},
+		{
+			"key": "deliveryId",
+			"value": ""
+		},
+		{
+			"key": "assemblingId",
+			"value": ""
+		},
+		{
+			"key": "c1Id",
+			"value": ""
+		},
+		{
+			"key": "c2Id",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Setup: services and counters",
+			"description": "Story: as an admin, I create the services and configure the counters.",
+			"item": [
+				{
+					"name": "1. Admin creates the service Payment",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set(\"runId\", Date.now());"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (service created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const service = pm.response.json();",
+									"",
+									"pm.test(\"Service is Payment with no tickets yet\", () => {",
+									"    pm.expect(service.name).to.eql(\"Payment\");",
+									"    pm.expect(service.num_tickets).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"paymentId\", service.id);",
+									"console.log(`Created Payment (id ${service.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/services",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"services"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Payment\",\n    \"service_time\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "2. Admin creates the service Delivery",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (service created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const service = pm.response.json();",
+									"",
+									"pm.test(\"Service is Delivery with no tickets yet\", () => {",
+									"    pm.expect(service.name).to.eql(\"Delivery\");",
+									"    pm.expect(service.num_tickets).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"deliveryId\", service.id);",
+									"console.log(`Created Delivery (id ${service.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/services",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"services"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Delivery\",\n    \"service_time\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "3. Admin creates the service Assembling",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (service created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const service = pm.response.json();",
+									"",
+									"pm.test(\"Service is Assembling with no tickets yet\", () => {",
+									"    pm.expect(service.name).to.eql(\"Assembling\");",
+									"    pm.expect(service.num_tickets).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"assemblingId\", service.id);",
+									"console.log(`Created Assembling (id ${service.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/services",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"services"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Assembling\",\n    \"service_time\": 15\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "4. Admin creates counter c1 (Payment + Delivery)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (counter created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const counter = pm.response.json();",
+									"pm.collectionVariables.set(\"c1Id\", counter.id);",
+									"console.log(`Created counter c1 (id ${counter.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/counters?name=c1-{{runId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"counters"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "c1-{{runId}}"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[{{paymentId}}, {{deliveryId}}]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "5. Admin creates counter c2 (Delivery + Assembling)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (counter created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const counter = pm.response.json();",
+									"pm.collectionVariables.set(\"c2Id\", counter.id);",
+									"console.log(`Created counter c2 (id ${counter.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/counters?name=c2-{{runId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"counters"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "c2-{{runId}}"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[{{deliveryId}}, {{assemblingId}}]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "6. Counter c1 serves Payment + Delivery",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const counter = pm.response.json();",
+									"",
+									"pm.test(\"Counter c1 has the right services\", () => {",
+									"    pm.expect(counter.services.map(s => s.name).sort()).to.eql([\"Delivery\", \"Payment\"]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/counters/{{c1Id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"counters",
+								"{{c1Id}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "7. Counter c2 serves Delivery + Assembling",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const counter = pm.response.json();",
+									"",
+									"pm.test(\"Counter c2 has the right services\", () => {",
+									"    pm.expect(counter.services.map(s => s.name).sort()).to.eql([\"Assembling\", \"Delivery\"]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/counters/{{c2Id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"counters",
+								"{{c2Id}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Clients get tickets",
+			"description": "Story: as a customer, I select a service and get a ticket. Codes count up per service.",
+			"item": [
+				{
+					"name": "8. Client 1 picks Payment and gets P001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Payment\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"paymentId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is P001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"P001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 1 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{paymentId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "9. Client 2 picks Delivery and gets D001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Delivery\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"deliveryId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is D001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"D001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 2 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{deliveryId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{deliveryId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "10. Client 3 picks Payment and gets P002",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Payment\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"paymentId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is P002\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"P002\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 3 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{paymentId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "11. Client 4 picks Assembling and gets A001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Assembling\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"assemblingId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is A001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"A001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 4 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{assemblingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{assemblingId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "12. Client 5 picks Delivery and gets D002",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Delivery\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"deliveryId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is D002\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"D002\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 5 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{deliveryId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{deliveryId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "13. Client 6 picks Payment and gets P003",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Payment\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"paymentId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is P003\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"P003\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 6 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{paymentId}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Reset the services",
+			"description": "Story: as an admin, I restart the ticket numbering (e.g. at the start of a new day).",
+			"item": [
+				{
+					"name": "14. Admin resets the services",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 200\", () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const services = pm.response.json();",
+									"",
+									"pm.test(\"Every service has 0 tickets\", () => {",
+									"    services.forEach(s => pm.expect(s.num_tickets).to.eql(0));",
+									"});",
+									"",
+									"pm.test(\"Payment, Delivery and Assembling are in the list\", () => {",
+									"    const ids = services.map(s => s.id);",
+									"    [\"paymentId\", \"deliveryId\", \"assemblingId\"].forEach(v => {",
+									"        pm.expect(ids).to.include(Number(pm.collectionVariables.get(v)));",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/services/reset",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"services",
+								"reset"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "04 - Clients get tickets after the reset",
+			"description": "The numbering has restarted: every service starts again from 001.",
+			"item": [
+				{
+					"name": "15. Client 7 picks Delivery and gets D001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Delivery\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"deliveryId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is D001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"D001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 7 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{deliveryId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{deliveryId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "16. Client 8 picks Payment and gets P001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Payment\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"paymentId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is P001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"P001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 8 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{paymentId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "17. Client 9 picks Assembling and gets A001",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Assembling\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"assemblingId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is A001\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"A001\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 9 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{assemblingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{assemblingId}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "18. Client 10 picks Payment and gets P002",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status is 201 (ticket created)\", () => {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const ticket = pm.response.json();",
+									"",
+									"pm.test(\"Ticket is for Payment\", () => {",
+									"    pm.expect(ticket.service_id).to.eql(Number(pm.collectionVariables.get(\"paymentId\")));",
+									"});",
+									"",
+									"pm.test(\"Ticket code is P002\", () => {",
+									"    pm.expect(ticket.code).to.eql(\"P002\");",
+									"});",
+									"",
+									"pm.test(\"Ticket is waiting in the queue\", () => {",
+									"    pm.expect(ticket.status).to.eql(\"waiting\");",
+									"});",
+									"",
+									"console.log(`Client 10 got ${ticket.code} (ticket #${ticket.id})`);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ticket?service_id={{paymentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ticket"
+							],
+							"query": [
+								{
+									"key": "service_id",
+									"value": "{{paymentId}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

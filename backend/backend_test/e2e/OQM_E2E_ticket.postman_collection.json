@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "OQM - E2E",
+    "description": "End-to-end scenarios for Office Queue Management, run against the real running server.\n\nRun the backend first (e.g. `uvicorn API:app --reload`), then run the collection in order with the Collection Runner or:\n\n    newman run OQM_E2E.postman_collection.json\n\nChange `baseUrl` in the collection variables if the server is not on localhost:8000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "serviceId", "value": "" },
+    { "key": "serviceName", "value": "" },
+    { "key": "ticketId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Get ticket",
+      "description": "Story: as a customer, I select a service and get a ticket.",
+      "item": [
+        {
+          "name": "1. Customer sees the list of services",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const services = pm.response.json();",
+                  "",
+                  "pm.test(\"Body is a non-empty list of services\", () => {",
+                  "    pm.expect(services).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Each service has id, name and service_time\", () => {",
+                  "    services.forEach(s => {",
+                  "        pm.expect(s).to.have.property(\"id\");",
+                  "        pm.expect(s).to.have.property(\"name\");",
+                  "        pm.expect(s).to.have.property(\"service_time\");",
+                  "    });",
+                  "});",
+                  "",
+                  "// The customer picks a service: we take the first one",
+                  "if (services.length > 0) {",
+                  "    pm.collectionVariables.set(\"serviceId\", services[0].id);",
+                  "    pm.collectionVariables.set(\"serviceName\", services[0].name);",
+                  "    console.log(`Picked service: ${services[0].name} (id ${services[0].id})`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "2. Customer picks a service and gets a ticket",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"serviceId\")) {",
+                  "    throw new Error(\"No service picked: run step 1 first (or the service list is empty).\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201 (ticket created)\", () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const ticket = pm.response.json();",
+                  "const serviceId = Number(pm.collectionVariables.get(\"serviceId\"));",
+                  "",
+                  "pm.test(\"Ticket has an id\", () => {",
+                  "    pm.expect(ticket).to.have.property(\"id\");",
+                  "});",
+                  "",
+                  "pm.test(\"Ticket is for the picked service\", () => {",
+                  "    pm.expect(ticket.service_id).to.eql(serviceId);",
+                  "});",
+                  "",
+                  "pm.test(\"Ticket is waiting in the queue\", () => {",
+                  "    pm.expect(ticket.status).to.eql(\"waiting\");",
+                  "});",
+                  "",
+                  "pm.test(\"Ticket has a creation time\", () => {",
+                  "    pm.expect(ticket.created_at).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"ticketId\", ticket.id);",
+                  "console.log(`Got ticket #${ticket.id} for ${pm.collectionVariables.get(\"serviceName\")}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ticket?service_id={{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ticket"],
+              "query": [{ "key": "service_id", "value": "{{serviceId}}" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

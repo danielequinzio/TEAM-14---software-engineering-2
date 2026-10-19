@@ -1,1 +1,496 @@
-In this directory, documentation will be inserted.
+# Office Queue Management – Documentation
+
+This document describes the current state of the project: the system design, the database, and the API endpoints. It covers only what is implemented so far.
+
+## Contents
+
+1. [System design](#1-system-design)
+2. [Database](#2-database)
+3. [API endpoints](#3-api-endpoints)
+4. [Testing](#4-testing)
+5. [Known issues and next steps](#5-known-issues-and-next-steps)
+
+---
+
+## 1. System design
+
+### Overview
+
+Office Queue Management (OQM) handles customer queues in an office that offers several services (for example _Shipping_ and _Accounts_). A customer picks a service and gets a ticket. The ticket then waits in the queue until a counter serves it.
+
+The project has three parts:
+
+| Part                          | Folder      | Status                                      |
+| ----------------------------- | ----------- | ------------------------------------------- |
+| Backend (REST API + database) | `backend/`  | Implemented: services and tickets           |
+| Frontend                      | `frontend/` | Implemented: get ticket and config counters |
+| Documentation                 | `docs/`     | This file                                   |
+
+### Architecture
+
+```mermaid
+flowchart LR
+    C[Web Client <br/> React] -- HTTP + JSON --> A[FastAPI app<br/>backend/API/API.py]
+    A -- SQLModel / SQLAlchemy --> D[(SQLite<br/>backend/OQM.db)]
+```
+
+- **FastAPI** exposes the REST endpoints and validates requests and responses.
+- **SQLModel** defines each table once. The same class is used as the database table and as the Pydantic model for request and response bodies.
+- **SQLite** stores the data in a single file, `backend/OQM.db`, so no database server is needed.
+
+### Tech stack
+
+| Component         | Library                      | Version             |
+| ----------------- | ---------------------------- | ------------------- |
+| Fronted Framework | React                        | xxxx                |
+| API framework     | FastAPI                      | 0.142.2             |
+| ORM / models      | SQLModel (on SQLAlchemy 2.1) | 0.0.48              |
+| Database          | SQLite                       | bundled with Python |
+| Tests             | pytest + `unittest.mock`     | pytest 9.1.1        |
+
+Requires Python 3.10 or newer, because the code uses `int | None` type hints. Setup and run instructions are in [`backend/README.md`](../backend/README.md).
+
+### Backend structure
+
+All backend code is in `backend/API/API.py`, in three sections:
+
+1. **Models**: the `Service` and `Ticket` tables.
+2. **DB setup**: the engine, the session dependency and the startup logic.
+3. **Routes**: the HTTP endpoints.
+
+### Request lifecycle
+
+1. A request reaches a route.
+2. FastAPI resolves the `SessionDep` dependency. `get_session()` opens a new `Session` on the engine and yields it.
+3. The route reads or writes through the session and commits if needed.
+4. The returned object is serialized with the route's `response_model`.
+5. When the request ends, the `with` block in `get_session()` closes the session.
+
+Every request gets its own session. Sessions are never shared between requests.
+
+### Startup (lifespan)
+
+When the app starts, the `lifespan` handler:
+
+1. Calls `SQLModel.metadata.create_all(engine)`. This creates `OQM.db` and any missing tables. Existing tables are not changed.
+2. Seeds sample services if the `service` table is empty:
+   - `Shipping`, average service time 5 minutes
+   - `Accounts`, average service time 10 minutes
+
+There are no migrations. If you change a model, delete `backend/OQM.db` and restart the server so the tables are recreated. This deletes all data.
+
+---
+
+## 2. Database
+
+### Connection
+
+```python
+DB_PATH = Path(__file__).resolve().parent.parent / "OQM.db"   # backend/OQM.db
+engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
+```
+
+The path is resolved from the location of `API.py`, so the same file is used whichever directory the server is started from. `check_same_thread=False` is needed because FastAPI can run a request on a different thread from the one that opened the SQLite connection.
+
+### Entity–relationship diagram
+
+```mermaid
+erDiagram
+    SERVICE ||--o{ TICKET : "refers to"
+    SERVICE {
+        int id PK "auto-generated"
+        string name
+        int service_time "avg minutes per customer"
+        int num_tickets "tickets since last reset"
+    }
+    TICKET {
+        int id PK "auto-generated"
+        string code "e.g. S001"
+        int service_id FK "-> service.id"
+        string status "waiting | serving | done"
+        datetime created_at "UTC, set on creation"
+    }
+```
+
+### Table `service`
+
+A type of service offered by the office.
+
+| Column         | Type    | Constraints                      | Description                                  |
+| -------------- | ------- | -------------------------------- | -------------------------------------------- |
+| `id`           | integer | primary key, generated by the DB | Service identifier                           |
+| `name`         | text    | required                         | Display name, e.g. `Shipping`                |
+| `service_time` | integer | required                         | Average minutes needed to serve one customer |
+| `num_tickets`  | integer | default `0`                      | Tickets issued since the last reset; used for the ticket code |
+
+### Table `ticket`
+
+One customer's place in the queue for a service.
+
+| Column       | Type     | Constraints                          | Description                    |
+| ------------ | -------- | ------------------------------------ | ------------------------------ |
+| `id`         | integer  | primary key, generated by the DB     | Ticket number                  |
+| `code`       | text     | required, set by `POST /ticket`      | Code shown to the customer, e.g. `S001` |
+| `service_id` | integer  | foreign key → `service.id`, required | Service the ticket is for      |
+| `status`     | text     | default `"waiting"`                  | `waiting`, `serving` or `done` |
+| `created_at` | datetime | default: current UTC time            | When the ticket was issued     |
+
+### Relationship
+
+- A **service** has zero or more **tickets**. A **ticket** belongs to exactly one service.
+- The API checks that the service exists before it creates a ticket (`POST /ticket` returns `404` otherwise).
+- SQLite does not enforce foreign keys unless `PRAGMA foreign_keys=ON` is set, and the project does not set it. The check in the API is therefore the only protection against tickets that point to a missing service.
+
+### Ticket status
+
+```mermaid
+stateDiagram-v2
+    [*] --> waiting : POST /ticket
+    waiting --> serving
+    serving --> done
+    done --> [*]
+```
+
+---
+
+## 3. API endpoints
+
+Base URL when running locally: `http://localhost:8000`
+Interactive docs (Swagger UI): `http://localhost:8000/docs`
+
+All request and response bodies are JSON. Validation errors (missing or wrongly typed parameters) return `422` with FastAPI's standard error body.
+
+### Summary
+
+| Method | Path        | Description                      | Success code |
+| ------ | ----------- | -------------------------------- | ------------ |
+| `GET`  | `/services` | List all services                | `200`        |
+| `POST` | `/services` | Create a service                 | `201`        |
+| `POST` | `/services/reset` | Restart the ticket numbering of every service | `200` |
+| `POST` | `/ticket`   | Issue a new ticket for a service | `201`        |
+| `GET`  | `/ticket`   | Get a ticket by id               | `200`        |
+| `POST` | `/counters` | Create a counter and set its services | `201`   |
+| `GET`  | `/counters` | List all counters                | `200`        |
+| `GET`  | `/counters/{counter_id}` | Get a counter with its services | `200` |
+| `PUT`  | `/counters/{counter_id}` | Replace the services of a counter | `200` |
+
+---
+
+### `GET /services`
+
+Returns every service.
+
+**Response `200`**
+
+```json
+[
+  { "id": 1, "name": "Shipping", "service_time": 5, "num_tickets": 6 },
+  { "id": 2, "name": "Accounts", "service_time": 10, "num_tickets": 0 }
+]
+```
+
+---
+
+### `POST /services`
+
+Creates a service.
+
+**Request body**
+
+| Field          | Type    | Required | Description                          |
+| -------------- | ------- | -------- | ------------------------------------ |
+| `name`         | string  | yes      | Service name                         |
+| `service_time` | integer | yes      | Average minutes per customer         |
+
+The `id` is generated by the DB and `num_tickets` starts at `0`.
+
+```json
+{ "name": "Payments", "service_time": 7 }
+```
+
+**Response `201`**
+
+```json
+{ "id": 3, "name": "Payments", "service_time": 7, "num_tickets": 0 }
+```
+
+**Errors**
+
+| Code  | When                                                  |
+| ----- | ----------------------------------------------------- |
+| `422` | `name` or `service_time` missing or of the wrong type |
+
+---
+
+### `POST /services/reset`
+
+Restarts the ticket numbering of **every** service, e.g. at the start of a new day. It sets `num_tickets` to `0`, so the next ticket of each service is `…001` again. There is no request body.
+
+The tickets already issued are **not** deleted or changed. After a reset, a new ticket can have the same `code` as an old one (two `S001`). Use `id` to tell them apart.
+
+**Example**
+
+```http
+POST /services/reset
+```
+
+**Response `200`**: all the services, after the reset
+
+```json
+[
+  { "id": 1, "name": "Shipping", "service_time": 5, "num_tickets": 0 },
+  { "id": 2, "name": "Accounts", "service_time": 10, "num_tickets": 0 }
+]
+```
+
+If there are no services, the response is `[]`.
+
+**Errors**
+
+| Code  | When                                        |
+| ----- | ------------------------------------------- |
+| `405` | Any method other than `POST` (e.g. `GET`) |
+
+---
+
+### `POST /ticket`
+
+Issues a new ticket for a service. The ticket starts as `waiting`.
+
+**Ticket code**: the first letter of the service name in capitals, followed by the service's `num_tickets` (after adding 1) padded to 3 digits:
+
+| Service name | `num_tickets` before | Code   |
+| ------------ | -------------------- | ------ |
+| `Shipping`   | `0`                  | `S001` |
+| `payments`   | `0`                  | `P001` |
+| `Shipping`   | `6`                  | `S007` |
+
+Every service gets a code, including services created with `POST /services`. Two services whose names start with the same letter (e.g. `Shipping` and `Sales`) share the letter, so their codes can look the same.
+
+**Query parameters**
+
+| Name         | Type    | Required | Description          |
+| ------------ | ------- | -------- | -------------------- |
+| `service_id` | integer | yes      | Service to queue for |
+
+**Example**
+
+```http
+POST /ticket?service_id=1
+```
+
+**Response `201`**
+
+```json
+{
+  "id": 12,
+  "code": "S007",
+  "service_id": 1,
+  "status": "waiting",
+  "created_at": "2026-10-10T09:15:30.123456"
+}
+```
+
+**Errors**
+
+| Code  | Body                                  | When                                   |
+| ----- | ------------------------------------- | -------------------------------------- |
+| `404` | `{"detail": "Service not found"}`     | No service has that `service_id`       |
+| `422` | `{"detail": "Service name is empty"}` | The service name is empty or only spaces |
+| `422` | validation error                      | `service_id` missing or not an integer |
+
+---
+
+### `GET /ticket`
+
+Returns one ticket.
+
+**Query parameters**
+
+| Name        | Type    | Required | Description       |
+| ----------- | ------- | -------- | ----------------- |
+| `ticket_id` | integer | yes      | Ticket to look up |
+
+**Example**
+
+```http
+GET /ticket?ticket_id=12
+```
+
+**Response `200`**
+
+```json
+{
+  "id": 12,
+  "code": "S007",
+  "service_id": 1,
+  "status": "waiting",
+  "created_at": "2026-10-10T09:15:30.123456"
+}
+```
+
+**Errors**
+
+| Code  | Body                             | When                                  |
+| ----- | -------------------------------- | ------------------------------------- |
+| `404` | `{"detail": "Ticket not found"}` | No ticket has that `ticket_id`        |
+| `422` | validation error                 | `ticket_id` missing or not an integer |
+
+---
+
+### `POST /counters`
+
+Creates a counter and sets the services it handles. A counter can handle several services, and a service can be handled by several counters.
+
+**Query parameters**
+
+| Name   | Type   | Required | Description                         |
+| ------ | ------ | -------- | ----------------------------------- |
+| `name` | string | yes      | Counter name, at least 1 character, must be unique |
+
+**Request body**: a JSON list of service ids. Duplicates are ignored; `[]` creates a counter with no services.
+
+**Example**
+
+```http
+POST /counters?name=c1
+Content-Type: application/json
+
+[1, 2]
+```
+
+**Response `201`**
+
+```json
+{ "id": 1, "name": "c1" }
+```
+
+**Errors**
+
+| Code  | Body                                             | When                                       |
+| ----- | ------------------------------------------------ | ------------------------------------------ |
+| `409` | `{"detail": "Counter name already exists"}`      | Another counter has the same `name`        |
+| `422` | `{"detail": "Unknown service id in service_ids"}` | A service id in the body does not exist; nothing is created |
+| `422` | validation error                                 | `name` missing or empty, or the body is not a list of integers |
+
+---
+
+### `GET /counters`
+
+Returns every counter, without its services (use `GET /counters/{counter_id}` for those).
+
+**Response `200`**
+
+```json
+[
+  { "id": 1, "name": "c1" },
+  { "id": 2, "name": "c2" }
+]
+```
+
+---
+
+### `GET /counters/{counter_id}`
+
+Returns one counter with the services it handles.
+
+**Example**
+
+```http
+GET /counters/1
+```
+
+**Response `200`**
+
+```json
+{
+  "id": 1,
+  "name": "c1",
+  "services": [
+    { "id": 1, "name": "Shipping", "service_time": 5, "num_tickets": 6 },
+    { "id": 2, "name": "Accounts", "service_time": 10, "num_tickets": 0 }
+  ]
+}
+```
+
+**Errors**
+
+| Code  | Body                              | When                               |
+| ----- | --------------------------------- | ---------------------------------- |
+| `404` | `{"detail": "Counter not found"}` | No counter has that `counter_id`   |
+| `422` | validation error                  | `counter_id` is not an integer     |
+
+---
+
+### `PUT /counters/{counter_id}`
+
+Replaces the services a counter handles. The old list is removed and the new one is saved; the counter's `id` and `name` don't change.
+
+**Request body**: a JSON list of service ids, as in `POST /counters`. `[]` removes all the services from the counter.
+
+**Example**
+
+```http
+PUT /counters/1
+Content-Type: application/json
+
+[2]
+```
+
+**Response `200`**
+
+```json
+{ "id": 1, "name": "c1" }
+```
+
+**Errors**
+
+| Code  | Body                                             | When                                     |
+| ----- | ------------------------------------------------ | ---------------------------------------- |
+| `404` | `{"detail": "Counter not found"}`                | No counter has that `counter_id`         |
+| `422` | `{"detail": "Unknown service id in service_ids"}` | A service id in the body does not exist; nothing changes |
+| `422` | validation error                                 | The body is not a list of integers       |
+
+---
+
+## 4. Testing
+
+Backend tests are in `backend/backend test/` and use **pytest** with **`unittest.mock`**.
+
+They replace the database session with a `MagicMock` through FastAPI's `dependency_overrides`, so they never read or write `OQM.db`:
+
+```python
+@pytest.fixture
+def client(mock_session):
+    app.dependency_overrides[get_session] = lambda: mock_session
+    yield TestClient(app)          # not a context manager -> lifespan doesn't run
+    app.dependency_overrides.clear()
+```
+
+Each test sets what the mock returns, for example `mock_session.get.return_value = fake_ticket`. It then calls the endpoint and checks both the HTTP response and how the session was used, for example `mock_session.get.assert_called_once_with(Ticket, 1)`.
+
+| File                 | Endpoint      | Cases                                                                                  |
+| -------------------- | ------------- | -------------------------------------------------------------------------------------- |
+| `test_get_ticket.py` | `GET /ticket` | ticket found, ticket not found (404), missing parameter (422), invalid parameter (422) |
+
+Run from `backend/`:
+
+```bash
+python -m pytest "backend test" -v
+```
+
+---
+
+## 5. Known issues and next steps
+
+**Known issues**
+
+- `GET /ticket` returns status `201 Created`. A read should return `200 OK`. If you change it, update the assertion in `test_get_ticket.py` too.
+- The `POST /ticket` and `GET /ticket` handlers are both named `get_ticket`. Routing still works, but the second definition replaces the first name in the module. Rename the GET handler, e.g. to `get_ticket`.
+- `POST /services` uses the table model as its request body, so a client can send its own `id`. A separate create model without `id` would prevent this.
+- SQLite foreign keys are not enforced (see [Relationship](#relationship)).
+
+**Not implemented yet**
+
+- Calling the next ticket and changing ticket status (`waiting → serving → done`).
+- Queue length and estimated waiting time (based on `service_time`).
