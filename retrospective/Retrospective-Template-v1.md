@@ -45,11 +45,12 @@ sections:
 
 - Total estimation error ratio: sum of total hours spent / sum of total hours effort - 1
 
-    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1 = 0.1347 \quad (13.47\%)$$
+    $$\frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1 = 0.1347 \quad (13.47 \% )$$
     
 - Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
 
-    $$\frac{1}{n}\sum_i^n \left| \frac{\text{spent}_{\text{task}_i}}{\text{estimation}_{\text{task}_i}}-1 \right| = 0.2731 \quad (27.31\%)$$
+     $$\frac{1}{n}\sum_i^n \left\lvert \frac{spent_{task_i}}{estimation_{task_i}} - 1 \right\rvert = 0.2731 \quad (27.31 \% )$$
+
 
   
 ## QUALITY MEASURES 
